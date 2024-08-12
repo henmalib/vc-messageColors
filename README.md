@@ -1,3 +1,6 @@
+> [!WARNING]
+> Please read [installation guide](https://discord.com/channels/1015060230222131221/1257038407503446176) first
+
 ### MessageColors
 
 Displays color codes like #cba6f7 or rgb(255,0,0) inside of messages
