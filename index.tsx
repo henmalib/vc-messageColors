@@ -7,14 +7,12 @@
 import "./styles.css";
 
 import ErrorBoundary from "@components/ErrorBoundary";
-import definePlugin from "@utils/types";
+import definePlugin, { StartAt } from "@utils/types";
 import { React } from "@webpack/common";
 import type { ReactElement } from "react";
 
 import { BlockDisplayType, ColorType, regex, RenderType, replaceRegexp, settings } from "./constants";
 
-const source = regex.map(r => r.reg.source).join("|");
-const matchAllRegExp = new RegExp(`^(${source})`, "i");
 
 interface ParsedColorInfo {
     type: "color";
@@ -26,23 +24,21 @@ interface ParsedColorInfo {
 const requiredFirstCharacters = ["r", "h", "#"].flatMap(v => [v, v.toUpperCase()]);
 
 export default definePlugin({
-  authors: [
-    {
-      id: 279266228151779329n,
-      name: "Hen",
-    },
-  ],
-  name: "MessageColors",
-  description: "Displays color codes like #FF0042 inside of messages",
-  settings,
-  patches: [
-    // Create a new markdown rule, so it parses just like any other features
-    // Like bolding, spoilers, mentions, etc
-    {
-      find: "roleMention:{order:",
-      group: true,
-      replacement: {
-        match: /roleMention:\{order:(\i\.\i\.order)/,
+    authors: [{
+        id: 279266228151779329n,
+        name: "Hen",
+    }],
+    name: "MessageColors",
+    description: "Displays color codes like #FF0042 inside of messages",
+    settings,
+    patches: [
+        // Create a new markdown rule, so it parses just like any other features
+        // Like bolding, spoilers, mentions, etc
+        {
+            find: "roleMention:{order:",
+            group: true,
+            replacement: {
+                match: /roleMention:\{order:(\i\.\i\.order)/,
                 replace: "color:$self.getColor($1),$&"
             }
         },
@@ -69,7 +65,19 @@ export default definePlugin({
             }
         },
     ],
+    start() {
+        const amount = settings.store.enable3CharHex ? "{1,2}" : "{2}";
+        regex.push({
+            reg: new RegExp("#(?:[0-9a-fA-F]{3})" + amount, "g"),
+            type: ColorType.HEX
+        });
+    },
+    // Needed to load all regex before patching
+    startAt: StartAt.Init,
     getColor(order: number) {
+        const source = regex.map(r => r.reg.source).join("|");
+        const matchAllRegExp = new RegExp(`^(${source})`, "i");
+
         return {
             order,
             // Don't even try to match if the message chunk doesn't start with...
@@ -108,7 +116,6 @@ export default definePlugin({
                     };
                 }
             },
-            // react(args: ReturnType<typeof this.parse>)
             react: ErrorBoundary.wrap(({ text, colorType, color }: ParsedColorInfo) => {
                 if (settings.store.renderType === RenderType.FOREGROUND) {
                     return <span style={{ color: color }}>{text}</span>;
