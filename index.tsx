@@ -54,6 +54,13 @@ export default definePlugin({
                 replace: requiredFirstCharacters.join("|") + "|$&"
             }
         },
+        {
+            find: "parseInlineCodeChildContent:",
+            replacement: {
+                match: /parseInlineCodeChildContent:/,
+                replace: "isInsideOfLink:true,$&"
+            }
+        },
         // Discord just requires it to be here
         // Or it explodes (bad)
         {
@@ -93,7 +100,7 @@ export default definePlugin({
                 // When typing/editing message
                 //
                 // Discord doesn't know how to deal with color and crashes
-                if (!parseProps.messageId) return {
+                if (!parseProps.messageId || parseProps.isInsideOfLink) return {
                     type: "text",
                     content: matchedContent[0]
                 };
